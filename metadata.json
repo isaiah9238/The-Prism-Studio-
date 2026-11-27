@@ -1,0 +1,6 @@
+{
+  "name": "The Prism Studio",
+  "description": "A 3D spatial local-first studio where ideas are refracted across orthogonal facets, checked for interferences, and converged into executable specs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
