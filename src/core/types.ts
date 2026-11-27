@@ -5,7 +5,16 @@
 
 export type FacetName = "geometry" | "architecture" | "cost" | "human";
 
-export type ConvergenceMode = "unified-architecture" | "tradeoff-matrix" | "executable-spec";
+export type CanonicalFacetKey =
+  | "geometry"
+  | "system_arch"
+  | "energetic_cost"
+  | "human_access";
+
+export type ConvergenceMode =
+  | "unified-architecture"
+  | "tradeoff-matrix"
+  | "executable-spec";
 
 export interface Emission {
   id: string;
@@ -19,9 +28,11 @@ export interface Emission {
 export interface FacetProjection {
   emissionId: string;
   facet: FacetName;
+  canonicalKey?: CanonicalFacetKey;
   title: string;
   claims: string[];
   invariantsOrBounds: string[];
+  tensions?: string[];
 }
 
 export interface Interference {
@@ -47,6 +58,8 @@ export interface PrismWorkspace {
   projections: Record<FacetName, FacetProjection>;
   interferences: Interference[];
   convergences: ConvergenceArtifact[];
+  targetConvergenceMode?: ConvergenceMode;
+  skillVersion?: string;
 }
 
 export interface PresetProject {
@@ -58,6 +71,19 @@ export interface PresetProject {
     rawContent: string;
     hardConstraints: string[];
   };
-  projections: Record<FacetName, { title: string; claims: string[]; invariantsOrBounds: string[] }>;
-  interferences: Array<{ facets: [FacetName, FacetName]; kind: "collision" | "reinforcement"; description: string; resolution: string }>;
+  projections: Record<
+    FacetName,
+    {
+      title: string;
+      claims: string[];
+      invariantsOrBounds: string[];
+      tensions?: string[];
+    }
+  >;
+  interferences: Array<{
+    facets: [FacetName, FacetName];
+    kind: "collision" | "reinforcement";
+    description: string;
+    resolution: string;
+  }>;
 }
