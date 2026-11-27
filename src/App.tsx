@@ -12,67 +12,86 @@ import { InterferencePanel } from "./components/InterferencePanel";
 import { ConvergenceModal } from "./components/ConvergenceModal";
 import { OutlineModal } from "./components/OutlineModal";
 import { PRESET_PROJECTS } from "./core/presets";
-import { PrismWorkspace, FacetName } from "./core/types";
+import { PRISM_SKILL_METADATA } from "./core/prismSkill";
+import { PrismWorkspace, FacetName, PresetProject } from "./core/types";
 import { vault } from "./vault/opfsVault";
 
-export default function App() {
-  const [currentPresetId, setCurrentPresetId] = useState<string>("luminous-self");
-  const [workspace, setWorkspace] = useState<PrismWorkspace>(() => {
-    const preset = PRESET_PROJECTS[0];
-    return {
-      emission: {
-        id: preset.id,
-        createdAt: new Date().toISOString(),
-        author: "self",
-        title: preset.emission.title,
-        rawContent: preset.emission.rawContent,
-        hardConstraints: preset.emission.hardConstraints
-      },
-      projections: {
-        geometry: {
-          emissionId: preset.id,
-          facet: "geometry",
-          title: preset.projections.geometry.title,
-          claims: preset.projections.geometry.claims,
-          invariantsOrBounds: preset.projections.geometry.invariantsOrBounds
-        },
-        architecture: {
-          emissionId: preset.id,
-          facet: "architecture",
-          title: preset.projections.architecture.title,
-          claims: preset.projections.architecture.claims,
-          invariantsOrBounds: preset.projections.architecture.invariantsOrBounds
-        },
-        cost: {
-          emissionId: preset.id,
-          facet: "cost",
-          title: preset.projections.cost.title,
-          claims: preset.projections.cost.claims,
-          invariantsOrBounds: preset.projections.cost.invariantsOrBounds
-        },
-        human: {
-          emissionId: preset.id,
-          facet: "human",
-          title: preset.projections.human.title,
-          claims: preset.projections.human.claims,
-          invariantsOrBounds: preset.projections.human.invariantsOrBounds
-        }
-      },
-      interferences: preset.interferences.map((inf, idx) => ({
-        id: `inf_${idx}_${Date.now()}`,
+function buildWorkspaceFromPreset(preset: PresetProject): PrismWorkspace {
+  return {
+    skillVersion: PRISM_SKILL_METADATA.version,
+    targetConvergenceMode: "unified-architecture",
+    emission: {
+      id: preset.id,
+      createdAt: new Date().toISOString(),
+      author: "self",
+      title: preset.emission.title,
+      rawContent: preset.emission.rawContent,
+      hardConstraints: preset.emission.hardConstraints,
+    },
+    projections: {
+      geometry: {
         emissionId: preset.id,
-        facets: inf.facets,
-        kind: inf.kind,
-        description: inf.description,
-        resolution: inf.resolution
-      })),
-      convergences: []
-    };
-  });
+        facet: "geometry",
+        canonicalKey: "geometry",
+        title: preset.projections.geometry.title,
+        claims: preset.projections.geometry.claims,
+        invariantsOrBounds: preset.projections.geometry.invariantsOrBounds,
+        tensions: preset.projections.geometry.tensions || [],
+      },
+      architecture: {
+        emissionId: preset.id,
+        facet: "architecture",
+        canonicalKey: "system_arch",
+        title: preset.projections.architecture.title,
+        claims: preset.projections.architecture.claims,
+        invariantsOrBounds: preset.projections.architecture.invariantsOrBounds,
+        tensions: preset.projections.architecture.tensions || [],
+      },
+      cost: {
+        emissionId: preset.id,
+        facet: "cost",
+        canonicalKey: "energetic_cost",
+        title: preset.projections.cost.title,
+        claims: preset.projections.cost.claims,
+        invariantsOrBounds: preset.projections.cost.invariantsOrBounds,
+        tensions: preset.projections.cost.tensions || [],
+      },
+      human: {
+        emissionId: preset.id,
+        facet: "human",
+        canonicalKey: "human_access",
+        title: preset.projections.human.title,
+        claims: preset.projections.human.claims,
+        invariantsOrBounds: preset.projections.human.invariantsOrBounds,
+        tensions: preset.projections.human.tensions || [],
+      },
+    },
+    interferences: preset.interferences.map((inf, idx) => ({
+      id: `inf_${idx}_${Date.now()}`,
+      emissionId: preset.id,
+      facets: inf.facets,
+      kind: inf.kind,
+      description: inf.description,
+      resolution: inf.resolution,
+    })),
+    convergences: [],
+  };
+}
 
-  const [selectedTarget, setSelectedTarget] = useState<"core" | FacetName | string>("core");
+export default function App() {
+  const [currentPresetId, setCurrentPresetId] =
+    useState<string>("luminous-self");
+  const [workspace, setWorkspace] = useState<PrismWorkspace>(() =>
+    buildWorkspaceFromPreset(PRESET_PROJECTS[0])
+  );
+
+  const [selectedTarget, setSelectedTarget] = useState<
+    "core" | FacetName | string
+  >("core");
   const [activeFacet, setActiveFacet] = useState<FacetName | null>(null);
-  const [activeInterferenceId, setActiveInterferenceId] = useState<string | null>(null);
+  const [activeInterferenceId, setActiveInterferenceId] = useState<
+    string | null
+  >(null);
 
   const [isCenterOpen, setIsCenterOpen] = useState(false);
   const [isConvergenceOpen, setIsConvergenceOpen] = useState(false);
@@ -92,57 +111,9 @@ export default function App() {
   // Switch preset project
   const handleSelectPreset = (presetId: string) => {
     setCurrentPresetId(presetId);
-    const preset = PRESET_PROJECTS.find(p => p.id === presetId) || PRESET_PROJECTS[0];
-    const newWs: PrismWorkspace = {
-      emission: {
-        id: preset.id,
-        createdAt: new Date().toISOString(),
-        author: "self",
-        title: preset.emission.title,
-        rawContent: preset.emission.rawContent,
-        hardConstraints: preset.emission.hardConstraints
-      },
-      projections: {
-        geometry: {
-          emissionId: preset.id,
-          facet: "geometry",
-          title: preset.projections.geometry.title,
-          claims: preset.projections.geometry.claims,
-          invariantsOrBounds: preset.projections.geometry.invariantsOrBounds
-        },
-        architecture: {
-          emissionId: preset.id,
-          facet: "architecture",
-          title: preset.projections.architecture.title,
-          claims: preset.projections.architecture.claims,
-          invariantsOrBounds: preset.projections.architecture.invariantsOrBounds
-        },
-        cost: {
-          emissionId: preset.id,
-          facet: "cost",
-          title: preset.projections.cost.title,
-          claims: preset.projections.cost.claims,
-          invariantsOrBounds: preset.projections.cost.invariantsOrBounds
-        },
-        human: {
-          emissionId: preset.id,
-          facet: "human",
-          title: preset.projections.human.title,
-          claims: preset.projections.human.claims,
-          invariantsOrBounds: preset.projections.human.invariantsOrBounds
-        }
-      },
-      interferences: preset.interferences.map((inf, idx) => ({
-        id: `inf_${idx}_${Date.now()}`,
-        emissionId: preset.id,
-        facets: inf.facets,
-        kind: inf.kind,
-        description: inf.description,
-        resolution: inf.resolution
-      })),
-      convergences: []
-    };
-    setWorkspace(newWs);
+    const preset =
+      PRESET_PROJECTS.find((p) => p.id === presetId) || PRESET_PROJECTS[0];
+    setWorkspace(buildWorkspaceFromPreset(preset));
     setSelectedTarget("core");
     setActiveFacet(null);
     setActiveInterferenceId(null);
@@ -151,15 +122,21 @@ export default function App() {
   // Keyboard navigation shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+Shift+V for outline
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "v") {
+      // Cmd/Ctrl+Shift+V for outline
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "v"
+      ) {
         e.preventDefault();
-        setIsOutlineOpen(prev => !prev);
+        setIsOutlineOpen((prev) => !prev);
         return;
       }
 
       // Ignore if typing in input/textarea
-      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) return;
+      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) {
+        return;
+      }
 
       if (e.key === "0") {
         setSelectedTarget("core");
@@ -181,6 +158,15 @@ export default function App() {
         setSelectedTarget("human");
         setActiveFacet("human");
         setActiveInterferenceId(null);
+      } else if (e.key.toLowerCase() === "i") {
+        const list = workspace.interferences;
+        if (list.length === 0) return;
+        const currentIndex = activeInterferenceId
+          ? list.findIndex((inf) => inf.id === activeInterferenceId)
+          : -1;
+        const next = list[(currentIndex + 1) % list.length];
+        setActiveFacet(null);
+        setActiveInterferenceId(next.id);
       } else if (e.key.toLowerCase() === "c") {
         setIsConvergenceOpen(true);
       }
@@ -188,7 +174,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [workspace.interferences, activeInterferenceId]);
 
   const handleSelectNode = (target: "core" | FacetName | string) => {
     setSelectedTarget(target);
@@ -196,7 +182,12 @@ export default function App() {
       setIsCenterOpen(true);
       setActiveFacet(null);
       setActiveInterferenceId(null);
-    } else if (target === "geometry" || target === "architecture" || target === "cost" || target === "human") {
+    } else if (
+      target === "geometry" ||
+      target === "architecture" ||
+      target === "cost" ||
+      target === "human"
+    ) {
       setActiveFacet(target);
       setActiveInterferenceId(null);
     }
@@ -226,7 +217,7 @@ export default function App() {
         onSelectPreset={handleSelectPreset}
         onOpenCenter={() => setIsCenterOpen(true)}
         onOpenConvergence={() => setIsConvergenceOpen(true)}
-        onToggleOutline={() => setIsOutlineOpen(prev => !prev)}
+        onToggleOutline={() => setIsOutlineOpen((prev) => !prev)}
         onExportMarkdown={handleExportMarkdown}
         onImportJSON={() => {}}
         isOutlineOpen={isOutlineOpen}

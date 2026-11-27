@@ -31,30 +31,39 @@ export const PRESET_PROJECTS: PresetProject[] = [
         invariantsOrBounds: [
           "Origin Attribution Invariant: No convergence without an authored emission",
           "Lens Isolation Invariant: Facets execute independently without cross-talk"
+        ],
+        tensions: [
+          "High-density spatial nodes can clutter small viewports if unconstrained"
         ]
       },
       architecture: {
         title: "System & Code Architecture",
         claims: [
           "Decoupled pure TypeScript core engine with zero DOM or WebGL dependencies",
-          "Universal OPFS local vault adapter with filesystem sync and ZIP archiving",
-          "Hybrid viewport combining Three.js WebGPU/WebGL2 canvas with ARIA DOM overlay"
+          "Universal OPFS local vault adapter with filesystem sync and Markdown archiving",
+          "Hybrid viewport combining Three.js canvas with ARIA DOM overlay"
         ],
         invariantsOrBounds: [
           "Unidirectional data flow: Capture -> Refract -> Interfere -> Converge",
           "Stateless 3D scene recomputed deterministically from domain store"
+        ],
+        tensions: [
+          "Maintaining strict parity between 3D spatial state and 2D DOM state requires disciplined unidirectional bindings"
         ]
       },
       cost: {
         title: "Energetic & Operational Cost",
         claims: [
           "Zero background animation loops; invalidation-driven rendering saves laptop batteries",
-          "Lightweight procedural meshes and analytical Fresnel node materials (<150 MB VRAM)",
-          "$0 baseline hosting cost with offline PWA caching capability"
+          "Lightweight procedural meshes and bounded draw budgets (<150 MB VRAM)",
+          "$0 baseline hosting cost with offline local-first persistence"
         ],
         invariantsOrBounds: [
           "Maximum DPR capped at 2 for retina display efficiency",
           "Heavy AI semantic synthesis gated behind explicit opt-in triggers"
+        ],
+        tensions: [
+          "Optical glass materials and continuous ambient motion compete with 0 fps idle power budgets"
         ]
       },
       human: {
@@ -67,6 +76,9 @@ export const PRESET_PROJECTS: PresetProject[] = [
         invariantsOrBounds: [
           "Brutal honesty in collision mapping phrased as structural mechanics",
           "Universal accessibility parity across visual and screen-reader modes"
+        ],
+        tensions: [
+          "Upfront multi-facet rigor can interrupt spontaneous creative sparks unless deferred"
         ]
       }
     },

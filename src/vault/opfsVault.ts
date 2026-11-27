@@ -125,48 +125,81 @@ export class OPFSVault {
 
   generateMarkdownExport(workspace: PrismWorkspace): string {
     const { emission, projections, interferences, convergences } = workspace;
-    let md = `# The Prism Studio: ${emission.title || "Emission"}
-\n> **Created**: ${new Date(emission.createdAt).toLocaleString()}  
-> **Author**: ${emission.author}
+    const renderFacet = (
+      label: string,
+      canonicalKey: string,
+      proj: PrismWorkspace["projections"][keyof PrismWorkspace["projections"]]
+    ) => {
+      const findings = proj.claims.map((c) => `- ${c}`).join("\n") || "- None";
+      const invariants =
+        proj.invariantsOrBounds.map((i) => `> ${i}`).join("\n") || "> None";
+      const tensions =
+        proj.tensions && proj.tensions.length > 0
+          ? `\n**Tensions**:\n${proj.tensions.map((t) => `- ${t}`).join("\n")}`
+          : "";
 
-## 1. Raw Emission
+      return `### ${label} (\`${canonicalKey}\`)\n**Findings**:\n${findings}\n\n**Invariants**:\n${invariants}${tensions}`;
+    };
+
+    const collisions = interferences.filter((i) => i.kind === "collision");
+    const reinforcements = interferences.filter(
+      (i) => i.kind === "reinforcement"
+    );
+
+    const md = `# The Prism Studio: ${emission.title || "Emission"}
+
+> **Created**: ${new Date(emission.createdAt).toLocaleString()}  
+> **Author**: ${emission.author}  
+> **Skill**: \`prism-skill\` v${workspace.skillVersion || "1.0.0"}  
+> **Target Convergence Mode**: \`${workspace.targetConvergenceMode || "unified-architecture"}\`
+
+## 1. Incident Input (Raw Emission)
 ${emission.rawContent}
 
 ### Hard Constraints
-${emission.hardConstraints.map(c => `- [x] ${c}`).join("\n")}
+${emission.hardConstraints.map((c) => `- [x] ${c}`).join("\n") || "- None"}
 
-## 2. Refractions across Orthogonal Facets
+## 2. Refractions Across Orthogonal Facets
 
-### Geometry & Invariants
-${projections.geometry.claims.map(c => `- ${c}`).join("\n")}
-**Invariants**:
-${projections.geometry.invariantsOrBounds.map(i => `> ${i}`).join("\n")}
+${renderFacet("Geometry & Invariants", "geometry", projections.geometry)}
 
-### System & Code Architecture
-${projections.architecture.claims.map(c => `- ${c}`).join("\n")}
-**Invariants**:
-${projections.architecture.invariantsOrBounds.map(i => `> ${i}`).join("\n")}
+${renderFacet("System & Code Architecture", "system_arch", projections.architecture)}
 
-### Energetic & Operational Cost
-${projections.cost.claims.map(c => `- ${c}`).join("\n")}
-**Invariants**:
-${projections.cost.invariantsOrBounds.map(i => `> ${i}`).join("\n")}
+${renderFacet("Energetic & Operational Cost", "energetic_cost", projections.cost)}
 
-### Human & Open Access
-${projections.human.claims.map(c => `- ${c}`).join("\n")}
-**Invariants**:
-${projections.human.invariantsOrBounds.map(i => `> ${i}`).join("\n")}
+${renderFacet("Human & Open Access", "human_access", projections.human)}
 
-## 3. Cross-Facet Interference Check
-${interferences.map(inf => `### [${inf.kind.toUpperCase()}] ${inf.facets[0]} ↔ ${inf.facets[1]}
-- **Tension**: ${inf.description}
-- **Resolution**: ${inf.resolution}
-`).join("\n")}
+## 3. Cross-Facet Interference Report
+
+### Destructive Collisions (${collisions.length})
+${
+  collisions
+    .map(
+      (inf) =>
+        `#### ${inf.facets[0]} ↔ ${inf.facets[1]}\n- **Conflict**: ${inf.description}\n- **Resolution Strategy**: ${inf.resolution}`
+    )
+    .join("\n\n") || "None recorded."
+}
+
+### Constructive Reinforcements (${reinforcements.length})
+${
+  reinforcements
+    .map(
+      (inf) =>
+        `#### ${inf.facets[0]} ↔ ${inf.facets[1]}\n- **Synergy**: ${inf.description}\n- **Amplification**: ${inf.resolution}`
+    )
+    .join("\n\n") || "None recorded."
+}
 
 ## 4. Converged Artifacts
-${convergences.map(conv => `### Mode: ${conv.mode} (${new Date(conv.createdAt).toLocaleString()})
-${conv.bodyMarkdown}
-`).join("\n---\n")}
+${
+  convergences
+    .map(
+      (conv) =>
+        `### Mode: ${conv.mode} (${new Date(conv.createdAt).toLocaleString()})\n${conv.bodyMarkdown}`
+    )
+    .join("\n---\n") || "No crystallized artifacts yet."
+}
 `;
     return md;
   }

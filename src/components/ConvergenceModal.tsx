@@ -3,9 +3,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from "react";
-import { X, Layers, Copy, Check, Download, Compass, Terminal, Table } from "lucide-react";
-import { PrismWorkspace, ConvergenceMode, ConvergenceArtifact } from "../core/types";
+import React, { useState, useEffect } from "react";
+import {
+  X,
+  Layers,
+  Copy,
+  Check,
+  Download,
+  Compass,
+  Terminal,
+  Table,
+  Braces,
+  AlertTriangle,
+} from "lucide-react";
+import {
+  PrismWorkspace,
+  ConvergenceMode,
+  ConvergenceArtifact,
+} from "../core/types";
+import {
+  PRISM_SKILL_METADATA,
+  toCanonicalFacetKey,
+  workspaceToPrismResult,
+} from "../core/prismSkill";
 
 interface ConvergenceModalProps {
   isOpen: boolean;
@@ -14,54 +34,142 @@ interface ConvergenceModalProps {
   onUpdateWorkspace: (newWs: PrismWorkspace) => void;
 }
 
+type ModalTab = ConvergenceMode | "prism-result-json";
+
 export const ConvergenceModal: React.FC<ConvergenceModalProps> = ({
   isOpen,
   onClose,
   workspace,
-  onUpdateWorkspace
+  onUpdateWorkspace,
 }) => {
+  const [activeTab, setActiveTab] = useState<ModalTab>(
+    workspace.targetConvergenceMode || "unified-architecture"
+  );
+  const [copied, setCopied] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(workspace.targetConvergenceMode || "unified-architecture");
+      setCopied(false);
+      setSavedToast(false);
+    }
+  }, [isOpen, workspace.targetConvergenceMode]);
+
   if (!isOpen) return null;
 
-  const [activeMode, setActiveMode] = useState<ConvergenceMode>("unified-architecture");
-  const [copied, setCopied] = useState(false);
+  const resolvedMode: ConvergenceMode =
+    activeTab === "prism-result-json"
+      ? workspace.targetConvergenceMode || "unified-architecture"
+      : activeTab;
 
-  // Generate body markdown based on activeMode
-  const generateArtifactBody = (mode: ConvergenceMode): string => {
+  const unresolvedCollisions = workspace.interferences.filter(
+    (inf) => inf.kind === "collision" && !inf.resolution.trim()
+  );
+
+  const generateArtifactBody = (tab: ModalTab): string => {
+    if (tab === "prism-result-json") {
+      return JSON.stringify(
+        workspaceToPrismResult(workspace, resolvedMode),
+        null,
+        2
+      );
+    }
+
     const { emission, projections, interferences } = workspace;
-    if (mode === "unified-architecture") {
-      return `### Unified Architecture: ${emission.title}
+    const collisions = interferences.filter((i) => i.kind === "collision");
+    const reinforcements = interferences.filter(
+      (i) => i.kind === "reinforcement"
+    );
 
-#### 1. Core Intent & Emission Summary
+    if (tab === "unified-architecture") {
+      return `### Unified Architecture: ${emission.title}
+> Generated via \`prism-skill\` v${PRISM_SKILL_METADATA.version} (\`runtime: ${PRISM_SKILL_METADATA.runtime}\`)
+
+#### 1. Incident Input & Constraints
 ${emission.rawContent}
 
-#### 2. Orthogonal Facet Integration
-- **Geometry & Invariants**: ${projections.geometry.claims[0] || "Defined radial topology"}
-- **System Architecture**: ${projections.architecture.claims[0] || "Decoupled state machine"}
-- **Operational Cost**: ${projections.cost.claims[0] || "Demand-driven rendering"}
-- **Human Access**: ${projections.human.claims[0] || "Calm zero-friction entry"}
+${emission.hardConstraints.map((c) => `- [x] ${c}`).join("\n") || "- No hard constraints specified"}
 
-#### 3. Resolved Interferences (${interferences.length} checked)
-${interferences.map(inf => `- **[${inf.kind}] ${inf.facets[0]} ↔ ${inf.facets[1]}**: ${inf.resolution}`).join("\n")}
-`;
-    } else if (mode === "tradeoff-matrix") {
+#### 2. Orthogonal Facet Synthesis
+- **geometry**: ${projections.geometry.claims[0] || "Defined radial topology"}
+- **system_arch**: ${projections.architecture.claims[0] || "Decoupled state machine"}
+- **energetic_cost**: ${projections.cost.claims[0] || "Demand-driven rendering"}
+- **human_access**: ${projections.human.claims[0] || "Calm zero-friction entry"}
+
+#### 3. Cross-Facet Interference Arbitration
+**Destructive Collisions (${collisions.length})**
+${
+  collisions
+    .map(
+      (inf) =>
+        `- **${toCanonicalFacetKey(inf.facets[0])} ↔ ${toCanonicalFacetKey(inf.facets[1])}**: ${inf.description}\n  - *Resolution Strategy*: ${inf.resolution || "UNRESOLVED"}`
+    )
+    .join("\n") || "- None"
+}
+
+**Constructive Reinforcements (${reinforcements.length})**
+${
+  reinforcements
+    .map(
+      (inf) =>
+        `- **${toCanonicalFacetKey(inf.facets[0])} ↔ ${toCanonicalFacetKey(inf.facets[1])}**: ${inf.description}`
+    )
+    .join("\n") || "- None"
+}`;
+    } else if (tab === "tradeoff-matrix") {
       return `### Trade-Off Matrix: ${emission.title}
 
-| Design Facet | Core Claim | Hard Constraint | Resolved Tension / Mitigation |
+| Canonical Lens | Primary Finding | Primary Tension | Constraint / Invariant |
 | :--- | :--- | :--- | :--- |
-| **Geometry** | ${projections.geometry.claims[0] || "N/A"} | ${emission.hardConstraints[0] || "None"} | Balanced via orthogonal focus lock |
-| **Architecture** | ${projections.architecture.claims[0] || "N/A"} | ${emission.hardConstraints[1] || "None"} | Decoupled pure core kernel |
-| **Cost** | ${projections.cost.claims[0] || "N/A"} | Low latency & VRAM | Invalidation-driven 0 fps idle sleep |
-| **Human Access** | ${projections.human.claims[0] || "N/A"} | Zero-friction UI | Neutral framing & ARIA outline parity |
-`;
-    } else {
-      const tsCode = `// Generated from The Prism Studio
-export interface ${emission.title.replace(/[^a-zA-Z0-9]/g, "")}Config {
-  id: "${emission.id}";
-  title: "${emission.title}";
-  constraints: ${JSON.stringify(emission.hardConstraints)};
-  geometryInvariants: ${JSON.stringify(projections.geometry.invariantsOrBounds)};
-  architectureRules: ${JSON.stringify(projections.architecture.invariantsOrBounds)};
+| **geometry** | ${projections.geometry.claims[0] || "N/A"} | ${projections.geometry.tensions?.[0] || "None noted"} | ${projections.geometry.invariantsOrBounds[0] || "None"} |
+| **system_arch** | ${projections.architecture.claims[0] || "N/A"} | ${projections.architecture.tensions?.[0] || "None noted"} | ${projections.architecture.invariantsOrBounds[0] || "None"} |
+| **energetic_cost** | ${projections.cost.claims[0] || "N/A"} | ${projections.cost.tensions?.[0] || "None noted"} | ${projections.cost.invariantsOrBounds[0] || "None"} |
+| **human_access** | ${projections.human.claims[0] || "N/A"} | ${projections.human.tensions?.[0] || "None noted"} | ${projections.human.invariantsOrBounds[0] || "None"} |
+
+#### Collision Resolutions
+${
+  collisions
+    .map(
+      (c) =>
+        `- **${toCanonicalFacetKey(c.facets[0])} ↔ ${toCanonicalFacetKey(c.facets[1])}**: ${c.resolution || "Pending resolution"}`
+    )
+    .join("\n") || "- All clear"
 }`;
+    } else {
+      const safeName =
+        emission.title.replace(/[^a-zA-Z0-9]/g, "") || "PrismSystem";
+      const prismResult = workspaceToPrismResult(workspace, "executable-spec");
+      const tsCode = `// Generated via prism-skill v${PRISM_SKILL_METADATA.version}
+export interface ${safeName}Spec {
+  incidentInput: string;
+  convergenceMode: "executable-spec";
+  constraints: string[];
+  facets: ["geometry", "system_arch", "energetic_cost", "human_access"];
+  invariants: {
+    geometry: string[];
+    system_arch: string[];
+    energetic_cost: string[];
+    human_access: string[];
+  };
+}
+
+export const spec: ${safeName}Spec = ${JSON.stringify(
+        {
+          incidentInput: emission.rawContent,
+          convergenceMode: "executable-spec",
+          constraints: emission.hardConstraints,
+          facets: ["geometry", "system_arch", "energetic_cost", "human_access"],
+          invariants: {
+            geometry: projections.geometry.invariantsOrBounds,
+            system_arch: projections.architecture.invariantsOrBounds,
+            energetic_cost: projections.cost.invariantsOrBounds,
+            human_access: projections.human.invariantsOrBounds,
+          },
+        },
+        null,
+        2
+      )};`;
 
       return `### Executable Specification: ${emission.title}
 
@@ -69,34 +177,36 @@ export interface ${emission.title.replace(/[^a-zA-Z0-9]/g, "")}Config {
 ${tsCode}
 \`\`\`
 
-#### Runtime Pipeline Verification
-1. **Capture**: \`Emission\` successfully validated with author \`self\`.
-2. **Refract**: 4 decoupled facet projections instantiated with zero cross-talk.
-3. **Interfere**: ${interferences.length} interferences evaluated with explicit resolutions.
-4. **Converge**: Artifact compiled successfully in mode \`${mode}\`.
-`;
+#### Harness Verification Summary
+1. **Capture**: \`incidentInput\` anchored with ${emission.hardConstraints.length} constraint(s).
+2. **Refract**: ${prismResult.refractions.length} isolated facets (\`geometry\`, \`system_arch\`, \`energetic_cost\`, \`human_access\`).
+3. **Interfere**: ${prismResult.interferenceReport.collisions.length} collision(s) and ${prismResult.interferenceReport.reinforcements.length} reinforcement(s) mapped.
+4. **Converge**: Mode \`executable-spec\` crystallized at \`${prismResult.timestamp}\`.`;
     }
   };
 
-  const currentBody = generateArtifactBody(activeMode);
+  const currentBody = generateArtifactBody(activeTab);
 
   const handleSaveArtifact = () => {
     const artifact: ConvergenceArtifact = {
       id: `conv_${Date.now()}`,
       emissionId: workspace.emission.id,
-      mode: activeMode,
+      mode: resolvedMode,
       createdAt: new Date().toISOString(),
-      interferencesResolved: workspace.interferences.map(i => i.id),
-      bodyMarkdown: currentBody
+      interferencesResolved: workspace.interferences
+        .filter((i) => i.resolution.trim().length > 0)
+        .map((i) => i.id),
+      bodyMarkdown: currentBody,
     };
 
     const updated: PrismWorkspace = {
       ...workspace,
-      convergences: [artifact, ...workspace.convergences]
+      targetConvergenceMode: resolvedMode,
+      convergences: [artifact, ...workspace.convergences],
     };
     onUpdateWorkspace(updated);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2000);
   };
 
   const copyToClipboard = () => {
@@ -106,8 +216,8 @@ ${tsCode}
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-6 text-slate-100 flex flex-col gap-6 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+      <div className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-6 text-slate-100 flex flex-col gap-5 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
           <div className="flex items-center gap-3">
@@ -117,24 +227,36 @@ ${tsCode}
             <div>
               <h2 className="text-lg font-bold">Convergence Horizon</h2>
               <p className="text-xs text-slate-400 font-mono">
-                Crystallizing refracted light into a unified deliverable spec
+                prism-skill v{PRISM_SKILL_METADATA.version} • Structured Convergence Output
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
+            aria-label="Close convergence modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Unresolved collision guard notice */}
+        {unresolvedCollisions.length > 0 && (
+          <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs shrink-0">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              {unresolvedCollisions.length} destructive collision(s) still need
+              a resolution strategy before final sign-off.
+            </span>
+          </div>
+        )}
+
         {/* Mode Tabs */}
-        <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shrink-0">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shrink-0">
           <button
-            onClick={() => setActiveMode("unified-architecture")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition ${
-              activeMode === "unified-architecture"
+            onClick={() => setActiveTab("unified-architecture")}
+            className={`flex items-center justify-center gap-2 py-2.5 px-2 rounded-xl text-xs font-semibold transition ${
+              activeTab === "unified-architecture"
                 ? "bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20"
                 : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
@@ -143,9 +265,9 @@ ${tsCode}
             <span>Unified Architecture</span>
           </button>
           <button
-            onClick={() => setActiveMode("tradeoff-matrix")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition ${
-              activeMode === "tradeoff-matrix"
+            onClick={() => setActiveTab("tradeoff-matrix")}
+            className={`flex items-center justify-center gap-2 py-2.5 px-2 rounded-xl text-xs font-semibold transition ${
+              activeTab === "tradeoff-matrix"
                 ? "bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20"
                 : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
@@ -154,15 +276,26 @@ ${tsCode}
             <span>Trade-Off Matrix</span>
           </button>
           <button
-            onClick={() => setActiveMode("executable-spec")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition ${
-              activeMode === "executable-spec"
+            onClick={() => setActiveTab("executable-spec")}
+            className={`flex items-center justify-center gap-2 py-2.5 px-2 rounded-xl text-xs font-semibold transition ${
+              activeTab === "executable-spec"
                 ? "bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20"
                 : "text-slate-400 hover:text-white hover:bg-slate-900"
             }`}
           >
             <Terminal className="w-4 h-4" />
             <span>Executable Spec</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("prism-result-json")}
+            className={`flex items-center justify-center gap-2 py-2.5 px-2 rounded-xl text-xs font-semibold transition ${
+              activeTab === "prism-result-json"
+                ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/25"
+                : "text-slate-400 hover:text-white hover:bg-slate-900"
+            }`}
+          >
+            <Braces className="w-4 h-4" />
+            <span>PrismResult JSON</span>
           </button>
         </div>
 
@@ -177,8 +310,18 @@ ${tsCode}
             onClick={copyToClipboard}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            <span>{copied ? "Copied to Clipboard!" : "Copy Markdown"}</span>
+            {copied ? (
+              <Check className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+            <span>
+              {copied
+                ? "Copied to Clipboard!"
+                : activeTab === "prism-result-json"
+                ? "Copy PrismResult JSON"
+                : "Copy Markdown"}
+            </span>
           </button>
 
           <div className="flex items-center gap-3">
@@ -190,10 +333,22 @@ ${tsCode}
             </button>
             <button
               onClick={handleSaveArtifact}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold transition shadow-md shadow-sky-500/20"
+              disabled={unresolvedCollisions.length > 0}
+              title={
+                unresolvedCollisions.length > 0
+                  ? "Resolve all destructive collisions first"
+                  : "Save crystallized artifact to local vault"
+              }
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold transition shadow-md shadow-sky-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Download className="w-4 h-4" />
-              <span>Crystallize & Save Artifact</span>
+              {savedToast ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              <span>
+                {savedToast ? "Artifact Crystallized!" : "Crystallize & Save Artifact"}
+              </span>
             </button>
           </div>
         </div>
