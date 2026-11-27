@@ -1,0 +1,12 @@
+### Trade-Off Matrix: The Luminous Self: A Local-First 3D Cognitive Studio
+
+| Canonical Lens | Primary Finding | Primary Tension | Constraint / Invariant |
+| :--- | :--- | :--- | :--- |
+| **geometry** | Radial star topology with core at (0,0,0) and 4 orbital facet planes at 3.2m radius | High-density spatial nodes can clutter small viewports if unconstrained | Origin Attribution Invariant: No convergence without an authored emission |
+| **system_arch** | Decoupled pure TypeScript core engine with zero DOM or WebGL dependencies | Maintaining strict parity between 3D spatial state and 2D DOM state requires disciplined unidirectional bindings | Unidirectional data flow: Capture -> Refract -> Interfere -> Converge |
+| **energetic_cost** | Zero background animation loops; invalidation-driven rendering saves laptop batteries | Optical glass materials and continuous ambient motion compete with 0 fps idle power budgets | Maximum DPR capped at 2 for retina display efficiency |
+| **human_access** | Calm zero-friction entry space with no attention traps, streaks, or gamification | Upfront multi-facet rigor can interrupt spontaneous creative sparks unless deferred | Brutal honesty in collision mapping phrased as structural mechanics |
+
+#### Collision Resolutions
+- **geometry ↔ human_access**: Hybrid focus lock: clicking any facet instantly glides the camera head-on and opens a crisp ARIA DOM panel.
+- **system_arch ↔ energetic_cost**: Adopt idle-zero demand rendering (0 fps when static) and analytical TSL Fresnel glass shaders.

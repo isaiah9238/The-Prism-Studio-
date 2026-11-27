@@ -1,0 +1,26 @@
+### Unified Architecture: The Luminous Self: A Local-First 3D Cognitive Studio
+> Generated via `prism-skill` v1.0.0 (`runtime: in_process`)
+
+#### 1. Incident Input & Constraints
+A quiet digital space where the human center originates raw sparks of intent without interruption, passes them through four orthogonal lenses (Geometry, Architecture, Cost, Human), detects interference tensions honestly, and converges them into executable specs.
+
+- [x] 100% local-first ownership with zero mandatory cloud sync
+- [x] Demand-driven 3D rendering (0 fps when idle, zero battery drain)
+- [x] Zero skewed text; dual 3D canvas and crisp DOM focus parity
+- [x] Neutral, non-sycophantic interference reflection
+
+#### 2. Orthogonal Facet Synthesis
+- **geometry**: Radial star topology with core at (0,0,0) and 4 orbital facet planes at 3.2m radius
+- **system_arch**: Decoupled pure TypeScript core engine with zero DOM or WebGL dependencies
+- **energetic_cost**: Zero background animation loops; invalidation-driven rendering saves laptop batteries
+- **human_access**: Calm zero-friction entry space with no attention traps, streaks, or gamification
+
+#### 3. Cross-Facet Interference Arbitration
+**Destructive Collisions (2)**
+- **geometry ↔ human_access**: Rotating 3D viewports and floating text labels can disorient users or blur reading.
+  - *Resolution Strategy*: Hybrid focus lock: clicking any facet instantly glides the camera head-on and opens a crisp ARIA DOM panel.
+- **system_arch ↔ energetic_cost**: Continuous 3D animation and real-time optical refraction consume high GPU power and battery.
+  - *Resolution Strategy*: Adopt idle-zero demand rendering (0 fps when static) and analytical TSL Fresnel glass shaders.
+
+**Constructive Reinforcements (1)**
+- **geometry ↔ system_arch**: Radial 4-plane geometry perfectly mirrors the unidirectional state machine and decoupled storage architecture.

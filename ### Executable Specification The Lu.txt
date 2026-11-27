@@ -1,0 +1,58 @@
+### Executable Specification: The Luminous Self: A Local-First 3D Cognitive Studio
+
+```ts
+// Generated via prism-skill v1.0.0
+export interface TheLuminousSelfALocalFirst3DCognitiveStudioSpec {
+  incidentInput: string;
+  convergenceMode: "executable-spec";
+  constraints: string[];
+  facets: ["geometry", "system_arch", "energetic_cost", "human_access"];
+  invariants: {
+    geometry: string[];
+    system_arch: string[];
+    energetic_cost: string[];
+    human_access: string[];
+  };
+}
+
+export const spec: TheLuminousSelfALocalFirst3DCognitiveStudioSpec = {
+  "incidentInput": "A quiet digital space where the human center originates raw sparks of intent without interruption, passes them through four orthogonal lenses (Geometry, Architecture, Cost, Human), detects interference tensions honestly, and converges them into executable specs.",
+  "convergenceMode": "executable-spec",
+  "constraints": [
+    "100% local-first ownership with zero mandatory cloud sync",
+    "Demand-driven 3D rendering (0 fps when idle, zero battery drain)",
+    "Zero skewed text; dual 3D canvas and crisp DOM focus parity",
+    "Neutral, non-sycophantic interference reflection"
+  ],
+  "facets": [
+    "geometry",
+    "system_arch",
+    "energetic_cost",
+    "human_access"
+  ],
+  "invariants": {
+    "geometry": [
+      "Origin Attribution Invariant: No convergence without an authored emission",
+      "Lens Isolation Invariant: Facets execute independently without cross-talk"
+    ],
+    "system_arch": [
+      "Unidirectional data flow: Capture -> Refract -> Interfere -> Converge",
+      "Stateless 3D scene recomputed deterministically from domain store"
+    ],
+    "energetic_cost": [
+      "Maximum DPR capped at 2 for retina display efficiency",
+      "Heavy AI semantic synthesis gated behind explicit opt-in triggers"
+    ],
+    "human_access": [
+      "Brutal honesty in collision mapping phrased as structural mechanics",
+      "Universal accessibility parity across visual and screen-reader modes"
+    ]
+  }
+};
+```
+
+#### Harness Verification Summary
+1. **Capture**: `incidentInput` anchored with 4 constraint(s).
+2. **Refract**: 4 isolated facets (`geometry`, `system_arch`, `energetic_cost`, `human_access`).
+3. **Interfere**: 2 collision(s) and 1 reinforcement(s) mapped.
+4. **Converge**: Mode `executable-spec` crystallized at `2026-11-27T04:52:31.949Z`.
