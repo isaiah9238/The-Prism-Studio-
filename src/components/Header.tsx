@@ -4,7 +4,14 @@
  */
 
 import React from "react";
-import { Sparkles, Download, Upload, ListTree, Cpu, Layers, ShieldCheck, Compass } from "lucide-react";
+import {
+  Sparkles,
+  Download,
+  ListTree,
+  Layers,
+  Compass,
+  HardDrive,
+} from "lucide-react";
 import { PRESET_PROJECTS } from "../core/presets";
 
 interface HeaderProps {
@@ -12,10 +19,11 @@ interface HeaderProps {
   onSelectPreset: (presetId: string) => void;
   onOpenCenter: () => void;
   onOpenConvergence: () => void;
+  onOpenDrive: () => void;
   onToggleOutline: () => void;
   onExportMarkdown: () => void;
-  onImportJSON: () => void;
   isOutlineOpen: boolean;
+  isDriveConnected: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,16 +31,20 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectPreset,
   onOpenCenter,
   onOpenConvergence,
+  onOpenDrive,
   onToggleOutline,
   onExportMarkdown,
-  onImportJSON,
-  isOutlineOpen
+  isOutlineOpen,
+  isDriveConnected,
 }) => {
   return (
     <header className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-6 py-4 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800 text-slate-100 shadow-2xl">
       {/* Brand & Preset Switcher */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={onOpenCenter}>
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={onOpenCenter}
+        >
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 via-indigo-500 to-rose-500 p-0.5 shadow-lg shadow-sky-500/20 flex items-center justify-center">
             <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
               <Compass className="w-5 h-5 text-sky-400 animate-pulse" />
@@ -48,14 +60,14 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        <div className="h-5 w-px bg-slate-800 mx-2 hidden md:block" />
+        <div className="h-5 w-px bg-slate-800 mx-2 hidden lg:block" />
 
         {/* Preset Selector */}
-        <div className="hidden md:flex items-center gap-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+        <div className="hidden lg:flex items-center gap-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
           <span className="text-[11px] font-mono text-slate-400 px-2 flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-sky-400" /> Subject:
           </span>
-          {PRESET_PROJECTS.map(p => (
+          {PRESET_PROJECTS.map((p) => (
             <button
               key={p.id}
               onClick={() => onSelectPreset(p.id)}
@@ -72,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         <button
           onClick={onOpenCenter}
           className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sky-300 border border-slate-700 transition shadow-lg"
@@ -88,10 +100,25 @@ export const Header: React.FC<HeaderProps> = ({
           title="Converge Artifact"
         >
           <Layers className="w-4 h-4 text-slate-950" />
-          <span>Converge Spec</span>
+          <span className="hidden sm:inline">Converge Spec</span>
         </button>
 
-        <div className="h-5 w-px bg-slate-800 mx-1" />
+        <button
+          onClick={onOpenDrive}
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-xl border transition ${
+            isDriveConnected
+              ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+              : "bg-slate-950/70 hover:bg-slate-800 text-slate-200 border-slate-700"
+          }`}
+          title="Open Google Drive Vault"
+        >
+          <HardDrive className="w-4 h-4" />
+          <span className="hidden md:inline">
+            {isDriveConnected ? "Drive Connected" : "Google Drive"}
+          </span>
+        </button>
+
+        <div className="h-5 w-px bg-slate-800 mx-0.5" />
 
         <button
           onClick={onToggleOutline}
@@ -101,6 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
               : "bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800"
           }`}
           title="Toggle 2D Accessible Outline View (Cmd+Shift+V)"
+          aria-label="Toggle 2D Outline View"
         >
           <ListTree className="w-4 h-4" />
         </button>
@@ -108,7 +136,8 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onExportMarkdown}
           className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-300 hover:bg-slate-800 transition"
-          title="Export Markdown Vault"
+          title="Download Markdown Vault"
+          aria-label="Download Markdown Vault"
         >
           <Download className="w-4 h-4" />
         </button>

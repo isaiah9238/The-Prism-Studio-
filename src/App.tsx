@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import { User } from "firebase/auth";
 import { Header } from "./components/Header";
 import { PrismCanvas } from "./components/PrismCanvas";
 import { CenterModal } from "./components/CenterModal";
@@ -11,10 +12,12 @@ import { FacetPanel } from "./components/FacetPanel";
 import { InterferencePanel } from "./components/InterferencePanel";
 import { ConvergenceModal } from "./components/ConvergenceModal";
 import { OutlineModal } from "./components/OutlineModal";
+import { DriveModal } from "./components/DriveModal";
 import { PRESET_PROJECTS } from "./core/presets";
 import { PRISM_SKILL_METADATA } from "./core/prismSkill";
 import { PrismWorkspace, FacetName, PresetProject } from "./core/types";
 import { vault } from "./vault/opfsVault";
+import { googleSignIn, initAuth, logout } from "./vault/googleDriveAuth";
 
 function buildWorkspaceFromPreset(preset: PresetProject): PrismWorkspace {
   return {
@@ -96,17 +99,94 @@ export default function App() {
   const [isCenterOpen, setIsCenterOpen] = useState(false);
   const [isConvergenceOpen, setIsConvergenceOpen] = useState(false);
   const [isOutlineOpen, setIsOutlineOpen] = useState(false);
+  const [isDriveOpen, setIsDriveOpen] = useState(false);
 
-  // Initialize vault on mount
+  // Google Drive Auth state (access token is kept strictly in-memory inside googleDriveAuth.ts)
+  const [driveUser, setDriveUser] = useState<User | null>(null);
+  const [needsAuth, setNeedsAuth] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Initialize OPFS vault & Firebase Auth listener on mount
   useEffect(() => {
     vault.init().catch(console.warn);
+
+    const unsubscribe = initAuth(
+      (user) => {
+        setDriveUser(user);
+        setNeedsAuth(false);
+        setAuthError(null);
+      },
+      () => {
+        setDriveUser(null);
+        setNeedsAuth(true);
+      }
+    );
+
+    return () => unsubscribe();
   }, []);
+
+  const handleGoogleSignIn = async () => {
+    setIsLoggingIn(true);
+    setAuthError(null);
+    try {
+      const result = await googleSignIn();
+      setDriveUser(result.user);
+      setNeedsAuth(false);
+    } catch (err) {
+      setAuthError(
+        err instanceof Error
+          ? err.message
+          : "Google sign-in failed. Please try again."
+      );
+      setNeedsAuth(true);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleGoogleSignOut = async () => {
+    await logout();
+    setDriveUser(null);
+    setNeedsAuth(true);
+  };
 
   // Save workspace changes
   const handleUpdateWorkspace = useCallback((newWs: PrismWorkspace) => {
     setWorkspace(newWs);
     vault.saveWorkspace(newWs).catch(console.warn);
   }, []);
+
+  // Load workspace from Google Drive
+  const handleLoadWorkspaceFromDrive = useCallback((loaded: PrismWorkspace) => {
+    setWorkspace(loaded);
+    setCurrentPresetId("");
+    setSelectedTarget("core");
+    setActiveFacet(null);
+    setActiveInterferenceId(null);
+    vault.saveWorkspace(loaded).catch(console.warn);
+  }, []);
+
+  // Import a Drive document (Google Doc, Markdown, Text) as a new Emission
+  const handleImportDocumentAsEmission = useCallback(
+    (docTitle: string, docContent: string) => {
+      const updated: PrismWorkspace = {
+        ...workspace,
+        emission: {
+          ...workspace.emission,
+          id: `drive_${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          title: docTitle,
+          rawContent: docContent,
+        },
+      };
+      setWorkspace(updated);
+      setCurrentPresetId("");
+      setIsCenterOpen(true);
+      vault.saveWorkspace(updated).catch(console.warn);
+    },
+    [workspace]
+  );
 
   // Switch preset project
   const handleSelectPreset = (presetId: string) => {
@@ -217,10 +297,11 @@ export default function App() {
         onSelectPreset={handleSelectPreset}
         onOpenCenter={() => setIsCenterOpen(true)}
         onOpenConvergence={() => setIsConvergenceOpen(true)}
+        onOpenDrive={() => setIsDriveOpen(true)}
         onToggleOutline={() => setIsOutlineOpen((prev) => !prev)}
         onExportMarkdown={handleExportMarkdown}
-        onImportJSON={() => {}}
         isOutlineOpen={isOutlineOpen}
+        isDriveConnected={!needsAuth && Boolean(driveUser)}
       />
 
       {/* 3D WebGL Viewport */}
@@ -266,6 +347,21 @@ export default function App() {
         isOpen={isOutlineOpen}
         onClose={() => setIsOutlineOpen(false)}
         workspace={workspace}
+      />
+
+      <DriveModal
+        isOpen={isDriveOpen}
+        onClose={() => setIsDriveOpen(false)}
+        user={driveUser}
+        needsAuth={needsAuth}
+        isLoggingIn={isLoggingIn}
+        authError={authError}
+        onSignIn={handleGoogleSignIn}
+        onSignOut={handleGoogleSignOut}
+        onRequireAuth={() => setNeedsAuth(true)}
+        workspace={workspace}
+        onLoadWorkspace={handleLoadWorkspaceFromDrive}
+        onImportDocumentAsEmission={handleImportDocumentAsEmission}
       />
     </div>
   );
